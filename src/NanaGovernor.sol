@@ -33,7 +33,6 @@ contract NanaGovernor is
         __GovernorCountingSimple_init();
         __GovernorVotes_init(_token);
         __GovernorVotesQuorumFraction_init(66);
-        //__Ownable_init();
         __UUPSUpgradeable_init();
     }
 
