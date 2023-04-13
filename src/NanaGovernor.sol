@@ -73,7 +73,7 @@ contract NanaGovernor is
     }
 
     /**
-     * @param blockNumber the blocknumeber to get the quorum for
+     * @param blockNumber the block number to get the quorum for
      * @return the quorum for a block number, in terms of number of votes: `supply * numerator / denominator`.
      */    
     function quorum(uint256 blockNumber)
