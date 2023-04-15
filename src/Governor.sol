@@ -40,7 +40,7 @@ contract Governor is
         __GovernorSettings_init(ONE_WEEK, ONE_WEEK, 0);
         __GovernorCountingSimple_init();
         __GovernorVotes_init(_votes);
-        __GovernorVotesQuorumFraction_init(66);
+        __GovernorVotesQuorumFraction_init(55);
         __UUPSUpgradeable_init();
     }
 
