@@ -2,18 +2,18 @@
 pragma solidity ^0.8.13;
 
 import "forge-std/Test.sol";
-import "../src/NanaGovernor.sol";
+import "../src/Governor.sol";
 
 import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 contract CounterTest is Test {
     MockERC20Votes public votes;
-    NanaGovernor public governor_implementation;
+    Governor public governor_implementation;
     ERC1967Proxy public proxy;
 
     // Same as proxy, but correct interface for usage
-    NanaGovernor public governor;
+    Governor public governor;
 
     uint256 private constant ONE_WEEK = 1 weeks / 12 seconds;
 
@@ -22,16 +22,17 @@ contract CounterTest is Test {
         votes = new MockERC20Votes();
 
         // Configure UUPS proxy
-        governor_implementation = new NanaGovernor();
+        governor_implementation = new Governor();
         proxy = new ERC1967Proxy(
             address(governor_implementation),
             abi.encodeWithSelector(
-                NanaGovernor.initialize.selector,
-                IVotesUpgradeable(address(votes))
+                Governor.initialize.selector,
+                "GenericGovernor",
+                IVotes(address(votes))
             )
         );
 
-        governor = NanaGovernor(payable(address(proxy)));
+        governor = Governor(payable(address(proxy)));
     }
 
     function testUpgrade() public {
@@ -51,13 +52,10 @@ contract CounterTest is Test {
         bytes[] memory _calldatas = new bytes[](1);
 
         _targets[0] = address(governor);
-        _calldatas[0] = abi.encodeWithSelector(
-            UUPSUpgradeable.upgradeTo.selector,
-            _upgradeTarget
-        );
-        
+        _calldatas[0] = abi.encodeWithSelector(UUPSUpgradeable.upgradeTo.selector, _upgradeTarget);
+
         vm.prank(_proposer);
-        uint256 _proposalId = governor.propose(_targets, _values, _calldatas, '');
+        uint256 _proposalId = governor.propose(_targets, _values, _calldatas, "");
 
         // Wait a week (+ 1 more block)
         vm.roll(block.number + ONE_WEEK + 1);
@@ -69,13 +67,10 @@ contract CounterTest is Test {
 
         // Wait a week (+ 1 more block)
         vm.roll(block.number + ONE_WEEK + 1);
-        governor.execute(_targets, _values, _calldatas, keccak256(''));
+        governor.execute(_targets, _values, _calldatas, keccak256(""));
 
         // Verify that the governor is now upgraded to the mockTarget
-        assertEq(
-            MockUpgradeTarget(address(governor)).successfulUpgrade(),
-            true
-        );
+        assertEq(MockUpgradeTarget(address(governor)).successfulUpgrade(), true);
     }
 }
 
@@ -88,11 +83,9 @@ contract MockERC20Votes is ERC20Votes {
 }
 
 contract MockUpgradeTarget is UUPSUpgradeable {
-    function _authorizeUpgrade(
-        address newImplementation
-    ) internal virtual override {}
+    function _authorizeUpgrade(address newImplementation) internal virtual override {}
 
-    function successfulUpgrade() public pure returns(bool) {
+    function successfulUpgrade() public pure returns (bool) {
         return true;
     }
 }
